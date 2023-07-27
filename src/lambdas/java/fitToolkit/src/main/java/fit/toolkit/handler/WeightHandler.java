@@ -44,6 +44,21 @@ public class WeightHandler implements RequestHandler<APIGatewayProxyRequestEvent
 
     @Override
     public APIGatewayProxyResponseEvent handleRequest(APIGatewayProxyRequestEvent event, Context context) {
+        /*
+            [{
+                "date": "2023-07-27T12:34:56Z",
+                "weight": 70.5,
+                "body_fat": 22.3,
+                "body_water": 55.8,
+                "muscle_mass": 65.2,
+                "bmr": 1550.6,
+                "physique_rating": 4,
+                "visc_fat": 7,
+                "bone_mass": 3.2,
+                "metab_age": 32,
+                "bmi": 24.1
+            }] 
+        */
         SimpleDateFormat fileNameFormater = new SimpleDateFormat("yyyyMMdd_kkmmss");
         String filename = "ws_" + fileNameFormater.format(new Date()) + ".fit";
         FileEncoder encoder = new FileEncoder(new File("/tmp/", filename), Fit.ProtocolVersion.V1_0);
