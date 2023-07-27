@@ -1,5 +1,5 @@
 {
-  "app": "npx ts-node --prefer-ts-exts bin/tanita-to-garmin-cdk.ts",
+  "app": "sh cdk_hooks.sh && npx ts-node --prefer-ts-exts bin/tanita-to-garmin-cdk.ts",
   "watch": {
     "include": [
       "**"
