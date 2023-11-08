@@ -24,6 +24,7 @@
     "aws-cdk-lib": "2.88.0",
     "aws-lambda": "^1.0.7",
     "constructs": "^10.0.0",
+    "garmin-connect": "^1.6.1",
     "source-map-support": "^0.5.21"
   }
 }

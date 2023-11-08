@@ -5,12 +5,6 @@ import * as iam from 'aws-cdk-lib/aws-iam';
 import { Construct } from 'constructs';
 
 export default (scope: Construct): lambda.Function => {
-  const blockPublicAccess: s3.BlockPublicAccess = {
-    blockPublicAcls: false,
-    blockPublicPolicy: false,
-    ignorePublicAcls: false,
-    restrictPublicBuckets: false,
-  };
   const fitFileS3Bucket = new s3.Bucket(scope, 'FitFileS3Bucket', {
     removalPolicy: cdk.RemovalPolicy.DESTROY,
   });

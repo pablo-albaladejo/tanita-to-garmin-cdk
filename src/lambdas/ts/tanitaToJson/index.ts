@@ -43,7 +43,6 @@ export async function handler(
     return {
       statusCode: 200,
       body: JSON.stringify({
-        foo: 'bar',
         message: 'Success',
         data: measurements,
       }),
