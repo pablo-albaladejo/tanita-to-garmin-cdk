@@ -1,14 +1,31 @@
 import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
-import fitToolkit from './fitToolkit';
-import tanitaToJson from './tanitaToJson';
-import garminUpload from './garminUpload';
+import fitToolkit from './functions/fitToolkit';
+import tanitaToJson from './functions/tanitaToJson';
+import garminUpload from './functions/garminUpload';
+import initialParamsState from './functions/initialParamsState';
 import * as sfn from 'aws-cdk-lib/aws-stepfunctions';
 import * as tasks from 'aws-cdk-lib/aws-stepfunctions-tasks';
+import * as events from 'aws-cdk-lib/aws-events';
+import * as targets from 'aws-cdk-lib/aws-events-targets';
 
 export class TanitaToGarminCdkStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
+
+    const initialParamsStateFunction = initialParamsState(this);
+    const initialParamsStateInvocation = new tasks.LambdaInvoke(
+      this,
+      'InitialParamsStateInvocation',
+      {
+        lambdaFunction: initialParamsStateFunction,
+        resultSelector: {
+          initialParams: sfn.JsonPath.stringToJson(
+            sfn.JsonPath.stringAt('$.Payload.body')
+          ),
+        },
+      }
+    );
 
     const tanitaToCsvFunction = tanitaToJson(this);
     const tanitaToCsvInvocation = new tasks.LambdaInvoke(
@@ -16,8 +33,21 @@ export class TanitaToGarminCdkStack extends cdk.Stack {
       'TanitaToCsvInvocation',
       {
         lambdaFunction: tanitaToCsvFunction,
-        inputPath: '$',
-        outputPath: '$',
+        payload: sfn.TaskInput.fromObject({
+          queryStringParameters: {
+            start_date: sfn.JsonPath.stringAt('$.initialParams.startDate'),
+            end_date: sfn.JsonPath.stringAt('$.initialParams.endDate'),
+            tanita_email: sfn.JsonPath.stringAt('$.initialParams.tanitaEmail'),
+            tanita_password: sfn.JsonPath.stringAt(
+              '$.initialParams.tanitaPassword'
+            ),
+            tanita_user: sfn.JsonPath.stringAt('$.initialParams.tanitaUser'),
+          },
+        }),
+        resultSelector: {
+          data: sfn.JsonPath.stringAt('$.Payload.body'),
+        },
+        resultPath: '$.measurements',
       }
     );
 
@@ -27,8 +57,13 @@ export class TanitaToGarminCdkStack extends cdk.Stack {
       'FitToolkitInvocation',
       {
         lambdaFunction: fitToolkitFunction,
-        inputPath: '$',
-        outputPath: '$',
+        payload: sfn.TaskInput.fromObject({
+          body: sfn.JsonPath.stringAt('$.measurements.data'),
+        }),
+        resultSelector: {
+          url: sfn.JsonPath.stringAt('$.Payload.body'),
+        },
+        resultPath: '$.file',
       }
     );
 
@@ -38,16 +73,22 @@ export class TanitaToGarminCdkStack extends cdk.Stack {
       'GarminUploadInvocation',
       {
         lambdaFunction: garminUploadFunction,
-        inputPath: '$',
-        outputPath: '$',
+        payload: sfn.TaskInput.fromObject({
+          body: {
+            username: sfn.JsonPath.stringAt('$.initialParams.garminUser'),
+            password: sfn.JsonPath.stringAt('$.initialParams.garminPassword'),
+            fileUrl: sfn.JsonPath.stringAt('$.file.url'),
+          },
+        }),
       }
     );
 
-    const definition = tanitaToCsvInvocation
+    const definition = initialParamsStateInvocation
+      .next(tanitaToCsvInvocation)
       .next(fitToolkitInvocation)
       .next(garminUploadInvocation);
 
-    new sfn.StateMachine(
+    const stateMachine = new sfn.StateMachine(
       this,
       'TanitaToGarminStateMachine',
       {
@@ -55,5 +96,16 @@ export class TanitaToGarminCdkStack extends cdk.Stack {
         timeout: cdk.Duration.minutes(5),
       }
     );
+
+    const everyMidNightRule = new events.Rule(this, 'EveryMidNightRule', {
+      schedule: events.Schedule.cron({
+        minute: '0',
+        hour: '0',
+        day: '*',
+        month: '*',
+        year: '*',
+      }),
+    });
+    everyMidNightRule.addTarget(new targets.SfnStateMachine(stateMachine));
   }
 }
