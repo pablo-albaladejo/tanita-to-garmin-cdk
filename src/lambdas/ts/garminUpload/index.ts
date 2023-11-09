@@ -36,7 +36,10 @@ export async function handler(
     };
   }
 
-  const bodyJson = JSON.parse(event.body);
+  //incomming event from step function is an object but from api gateway is a string
+  const bodyJson =
+    typeof event.body === 'string' ? JSON.parse(event.body) : event.body;
+
   const { fileUrl, username, password } = bodyJson;
 
   const filename = `/tmp/${new Date().getTime()}.fit`;
@@ -52,7 +55,7 @@ export async function handler(
   return {
     statusCode: 200,
     body: JSON.stringify({
-      upload
+      upload,
     }),
   };
 }
