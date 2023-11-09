@@ -57,9 +57,11 @@ public class WeightHandler implements RequestHandler<APIGatewayProxyRequestEvent
         fileIdMesg.setSerialNumber(1L);
         encoder.write(fileIdMesg);
 
-        String json = event.getBody();
-        JsonArray jsonArray = new Gson().fromJson(json, JsonArray.class);
-        jsonArray.forEach(jsonElement -> {
+        String bodyString = event.getBody();
+        JsonArray dataArray = new Gson().fromJson(bodyString,
+                JsonArray.class);
+
+        dataArray.forEach(jsonElement -> {
             WeightScaleMesg wm = getWeightScaleMesg(jsonElement.getAsJsonObject());
             encoder.write(wm);
         });
@@ -76,10 +78,10 @@ public class WeightHandler implements RequestHandler<APIGatewayProxyRequestEvent
         response.setStatusCode(200);
 
         Map<String, String> headers = new HashMap<>();
-        headers.put("Content-Type", "application/json");
+        headers.put("Content-Type", "text/plain");
         response.setHeaders(headers);
 
-        response.setBody("{ \"url\": \"" + objectURL + "\" }");
+        response.setBody(objectURL);
 
         return response;
     }
