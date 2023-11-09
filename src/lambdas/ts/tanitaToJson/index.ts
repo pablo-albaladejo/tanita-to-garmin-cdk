@@ -42,10 +42,7 @@ export async function handler(
 
     return {
       statusCode: 200,
-      body: JSON.stringify({
-        message: 'Success',
-        data: measurements,
-      }),
+      body: JSON.stringify(measurements),
     };
   } catch (error) {
     if (error instanceof Error)
