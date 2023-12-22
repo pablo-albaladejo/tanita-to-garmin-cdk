@@ -15,7 +15,6 @@ export default (scope: Construct) => {
         minify: true,
       },
       timeout: cdk.Duration.seconds(300),
-      logRetention: cdk.aws_logs.RetentionDays.ONE_MONTH,
     }
   );
 

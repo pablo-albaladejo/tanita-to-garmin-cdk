@@ -16,8 +16,7 @@ export default (scope: Construct) => {
       bundling: {
         minify: true,
       },
-      timeout: cdk.Duration.seconds(300),
-      logRetention: cdk.aws_logs.RetentionDays.ONE_MONTH,
+      timeout: cdk.Duration.seconds(300)
     }
   );
   
