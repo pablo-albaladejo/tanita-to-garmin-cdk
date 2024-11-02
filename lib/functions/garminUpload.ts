@@ -10,7 +10,7 @@ export default (scope: Construct) => {
     {
       handler: 'handler',
       entry: 'src/lambdas/ts/garminUpload/index.ts',
-      runtime: lambda.Runtime.NODEJS_18_X,
+      runtime: lambda.Runtime.NODEJS_20_X,
       bundling: {
         minify: true,
       },
