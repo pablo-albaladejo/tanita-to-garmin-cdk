@@ -9,3 +9,6 @@ cdk.out
 
 # maven
 **/java/**/target
+
+# vscode
+.vscode
