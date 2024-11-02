@@ -18,13 +18,5 @@ export default (scope: Construct) => {
     }
   );
 
-  const tanitaToCsvFunctionUrl = tanitaToCsvFunction.addFunctionUrl({
-    authType: lambda.FunctionUrlAuthType.NONE,
-  });
-  new cdk.CfnOutput(scope, 'TanitaToJsonFunctionUrl', {
-    value: tanitaToCsvFunctionUrl.url,
-    description: 'Tanita To Json Function URL',
-  });
-
   return tanitaToCsvFunction;
 };

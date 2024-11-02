@@ -18,13 +18,5 @@ export default (scope: Construct) => {
     }
   );
 
-  const garminUploadFunctionUrl = garminUploadFunction.addFunctionUrl({
-    authType: lambda.FunctionUrlAuthType.NONE,
-  });
-  new cdk.CfnOutput(scope, 'GarminUploadFunctionUrl', {
-    value: garminUploadFunctionUrl.url,
-    description: 'Garmin Upload Function URL',
-  });
-
   return garminUploadFunction;
 };

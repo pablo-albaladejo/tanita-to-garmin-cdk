@@ -30,13 +30,5 @@ export default (scope: Construct): lambda.Function => {
   });
   fitFileS3Bucket.grantReadWrite(fitToolkitFunction);
 
-  const fitToolkitFunctionUrl = fitToolkitFunction.addFunctionUrl({
-    authType: lambda.FunctionUrlAuthType.NONE,
-  });
-  new cdk.CfnOutput(scope, 'FitToolkitFunctionUrl', {
-    value: fitToolkitFunctionUrl.url,
-    description: 'Fit Toolkit Function URL',
-  });
-
   return fitToolkitFunction;
 };
