@@ -38,8 +38,6 @@
             <groupId>com.garmin.fit</groupId>
             <artifactId>fit</artifactId>
             <version>1.0.0</version>
-            <scope>system</scope>
-            <systemPath>${project.basedir}/libs/fit.jar</systemPath>
         </dependency>
     </dependencies>
     <build>
@@ -55,6 +53,7 @@
                 </configuration>
             </plugin>
             <plugin>
+                <!-- Maven Shade Plugin to create an Uber JAR -->
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
                 <version>3.2.4</version>
