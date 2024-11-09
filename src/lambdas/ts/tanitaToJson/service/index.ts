@@ -13,6 +13,7 @@ export class TanitaService {
   }
 
   getMeasurementsByDateRage = async (startDate?: string, endDate?: string) => {
+    console.log('TanitaService.getMeasurementsByDateRage', startDate, endDate);
     await this.repository.init(this.options);
 
     const csvData = await this.repository.exportCSV();

@@ -1,61 +1,83 @@
 import { GarminConnect } from 'garmin-connect';
 import {
-  APIGatewayProxyEvent,
   APIGatewayProxyResult,
   Context,
 } from 'aws-lambda';
+import * as AWS from 'aws-sdk';
+import path = require('path');
 import * as fs from 'fs';
-import * as https from 'https';
 
-const donwload = (fileUrl: string, filename: string) => {
-  return new Promise((resolve, reject) => {
-    const file = fs.createWriteStream(filename);
-    https.get(fileUrl, (response) => {
-      response.pipe(file);
-      file.on('finish', () => {
-        file.close();
-        resolve(file);
-      });
-      file.on('error', (err) => {
-        reject(err);
-      });
-    });
-  });
+const dynamoDb = new AWS.DynamoDB.DocumentClient();
+const usersTable = process.env.USERS_TABLE;
+
+const getGarminCredentials = async (userId: string, tableName: string) => {
+  const params = {
+    TableName: tableName,
+    Key: {
+      PK: `USER#${userId}`,
+      SK: 'CRED#GARMIN',
+    },
+  };
+
+  const result = await dynamoDb.get(params).promise();
+  const credentials = result.Item;
+
+  if (!credentials || !credentials.User || !credentials.Pass) {
+    throw new Error('Missing Garmin credentials for the specified userId');
+  }
+
+  return {
+    username: credentials.User,
+    password: credentials.Pass,
+  };
 };
 
 export async function handler(
-  event: APIGatewayProxyEvent,
+  event: {
+    userId: string;
+    base64: string;
+  },
   _context: Context
 ): Promise<APIGatewayProxyResult> {
-  if (!event.body) {
-    return {
-      statusCode: 400,
-      body: JSON.stringify({
-        message: 'Missing body',
-      }),
-    };
+  if (!usersTable) {
+    throw new Error('Environment variable USERS_TABLE is not defined');
   }
 
-  //incomming event from step function is an object but from api gateway is a string
-  const bodyJson =
-    typeof event.body === 'string' ? JSON.parse(event.body) : event.body;
-
-  const { fileUrl, username, password } = bodyJson;
-
-  const filename = `/tmp/${new Date().getTime()}.fit`;
-  await donwload(fileUrl, filename);
+  const { username, password } = await getGarminCredentials(event.userId, usersTable);
 
   const GCClient = new GarminConnect({
     username,
     password,
   });
   await GCClient.login();
-  const upload = await GCClient.uploadActivity(filename, 'fit');
 
-  return {
-    statusCode: 200,
-    body: JSON.stringify({
-      upload,
-    }),
-  };
+  // Decode base64 file and save it temporarily
+  const filePath = path.join('/tmp', `activity-${event.userId}.fit`);
+  const fileBuffer = Buffer.from(event.base64, 'base64');
+  fs.writeFileSync(filePath, fileBuffer);
+
+  // Upload the file to Garmin Connect
+  try {
+    const upload = await GCClient.uploadActivity(filePath, 'fit');
+    
+    return {
+      statusCode: 200,
+      body: JSON.stringify({
+        message: 'File uploaded successfully',
+        upload,
+      }),
+    };
+  } catch (error) {
+    console.error('Error uploading to Garmin:', error);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({
+        message: 'Failed to upload file to Garmin',
+        error: error instanceof Error ? error.message : 'Unknown error',
+      }),
+    };
+  } finally {
+    // Clean up the temporary file
+    fs.unlinkSync(filePath);
+  }
 }

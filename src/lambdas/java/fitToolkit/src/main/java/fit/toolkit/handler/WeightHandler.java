@@ -4,9 +4,6 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.s3.model.PutObjectRequest;
 
 import com.garmin.fit.*;
 import com.google.gson.Gson;
@@ -14,9 +11,11 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
 import java.io.File;
-
+import java.io.IOException;
+import java.nio.file.Files;
 import java.text.SimpleDateFormat;
 import java.time.ZonedDateTime;
+import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -43,46 +42,50 @@ public class WeightHandler implements RequestHandler<APIGatewayProxyRequestEvent
 
     @Override
     public APIGatewayProxyResponseEvent handleRequest(APIGatewayProxyRequestEvent event, Context context) {
-        String bucketName = System.getenv("BUCKET_NAME");
-
-        SimpleDateFormat fileNameFormater = new SimpleDateFormat("yyyyMMdd_kkmmss");
-        String filename = "ws_" + fileNameFormater.format(new Date()) + ".fit";
+        SimpleDateFormat fileNameFormatter = new SimpleDateFormat("yyyyMMdd_kkmmss");
+        String filename = "ws_" + fileNameFormatter.format(new Date()) + ".fit";
         File file = new File("/tmp/", filename);
-        FileEncoder encoder = new FileEncoder(file, Fit.ProtocolVersion.V1_0);
 
-        FileIdMesg fileIdMesg = new FileIdMesg();
-        fileIdMesg.setType(com.garmin.fit.File.WEIGHT);
-        fileIdMesg.setManufacturer(Manufacturer.TANITA);
-        fileIdMesg.setProduct(1);
-        fileIdMesg.setSerialNumber(1L);
-        encoder.write(fileIdMesg);
+        try {
+            FileEncoder encoder = new FileEncoder(file, Fit.ProtocolVersion.V1_0);
 
-        String bodyString = event.getBody();
-        JsonArray dataArray = new Gson().fromJson(bodyString,
-                JsonArray.class);
+            FileIdMesg fileIdMesg = new FileIdMesg();
+            fileIdMesg.setType(com.garmin.fit.File.WEIGHT);
+            fileIdMesg.setManufacturer(Manufacturer.TANITA);
+            fileIdMesg.setProduct(1);
+            fileIdMesg.setSerialNumber(1L);
+            encoder.write(fileIdMesg);
 
-        dataArray.forEach(jsonElement -> {
-            WeightScaleMesg wm = getWeightScaleMesg(jsonElement.getAsJsonObject());
-            encoder.write(wm);
-        });
+            String bodyString = event.getBody();
+            JsonArray dataArray = new Gson().fromJson(bodyString, JsonArray.class);
 
-        encoder.close();
+            dataArray.forEach(jsonElement -> {
+                WeightScaleMesg wm = getWeightScaleMesg(jsonElement.getAsJsonObject());
+                encoder.write(wm);
+            });
 
-        AmazonS3 s3Client = AmazonS3ClientBuilder.standard().build();
-        PutObjectRequest request = new PutObjectRequest(bucketName, filename, file);
-        s3Client.putObject(request);
+            encoder.close();
 
-        String objectURL = s3Client.getUrl(bucketName, filename).toExternalForm();
+            byte[] fileBytes = Files.readAllBytes(file.toPath());
 
-        APIGatewayProxyResponseEvent response = new APIGatewayProxyResponseEvent();
-        response.setStatusCode(200);
+            String base64Binary = Base64.getEncoder().encodeToString(fileBytes);
 
-        Map<String, String> headers = new HashMap<>();
-        headers.put("Content-Type", "text/plain");
-        response.setHeaders(headers);
+            APIGatewayProxyResponseEvent response = new APIGatewayProxyResponseEvent();
+            response.setStatusCode(200);
 
-        response.setBody(objectURL);
+            Map<String, String> headers = new HashMap<>();
+            headers.put("Content-Type", "application/octet-stream");
+            response.setHeaders(headers);
 
-        return response;
+            response.setBody(base64Binary);
+            return response;
+
+        } catch (IOException e) {
+            context.getLogger().log("Error processing CSV: " + e.getMessage());
+            APIGatewayProxyResponseEvent response = new APIGatewayProxyResponseEvent();
+            response.setStatusCode(500);
+            response.setBody("Error processing CSV to FIT file.");
+            return response;
+        }
     }
 }
