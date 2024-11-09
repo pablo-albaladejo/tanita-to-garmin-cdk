@@ -9,6 +9,7 @@ export const handler = async () => {
         console.error('Table name not set');
         return;
     }
+    
     const userId = uuidv4();
 
     const exampleData = [
@@ -24,6 +25,7 @@ export const handler = async () => {
             User: 'tanitaUser',
             Pass: 'tanitaPass',
             Profile: 'tanitaProfile',
+            SyncEnabled: true  // SyncEnabled explicitly set for TANITA
         },
         {
             PK: `USER#${userId}`,
@@ -31,6 +33,8 @@ export const handler = async () => {
             Type: 'GARMIN',
             User: 'garminUser',
             Pass: 'garminPass',
+            Profile: 'garminProfile',
+            SyncEnabled: false  // SyncEnabled explicitly set for GARMIN
         },
     ];
 
@@ -44,6 +48,8 @@ export const handler = async () => {
                 [tableName]: putRequests,
             },
         }).promise();
+
+        console.log('Example data seeded successfully');
     } catch (error) {
         console.error('Error seeding example data:', error);
     }
