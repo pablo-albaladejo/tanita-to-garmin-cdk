@@ -24,16 +24,6 @@ jobs:
       - name: Install CDK
         run: npm install -g aws-cdk
 
-      - name: Set up Java
-        uses: actions/setup-java@v3
-        with:
-          distribution: 'temurin'
-          java-version: '11'
-
-      - name: Install Maven dependencies
-        run: mvn clean install --quiet
-        working-directory: src/lambdas/java/fitToolkit
-
       - name: Install Node.js dependencies
         run: npm install
 
