@@ -21,7 +21,6 @@ export const handler = async () => {
         {
             PK: `USER#${userId}`,
             SK: 'CRED#TANITA',
-            Type: 'TANITA',
             User: 'tanitaUser',
             Pass: 'tanitaPass',
             Profile: 'tanitaProfile',
@@ -30,12 +29,16 @@ export const handler = async () => {
         {
             PK: `USER#${userId}`,
             SK: 'CRED#GARMIN',
-            Type: 'GARMIN',
             User: 'garminUser',
             Pass: 'garminPass',
-            Profile: 'garminProfile',
             SyncEnabled: false  // SyncEnabled explicitly set for GARMIN
         },
+        {
+            PK: `USER#${userId}`,
+            SK: 'CRED#GOOGLE',
+            SheetId: 'sheetId',
+            SyncEnabled: true  // SyncEnabled explicitly set for GOOGLE
+        }
     ];
 
     try {
