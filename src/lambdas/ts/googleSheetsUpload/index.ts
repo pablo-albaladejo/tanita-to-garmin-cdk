@@ -1,6 +1,6 @@
 import { GoogleSpreadsheet } from 'google-spreadsheet';
 import { JWT } from 'google-auth-library';
-import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
+import { APIGatewayProxyResult, Context } from 'aws-lambda';
 import { S3, DynamoDB } from 'aws-sdk';
 
 const s3 = new S3();
@@ -11,30 +11,43 @@ const credentialsFilePath = process.env.CREDENTIALS_FILE_PATH;
 const usersTable = process.env.USERS_TABLE;
 
 
-const getGoogleSheetId = async (userId: string, tableName: string) => {
+const getGoogleSheetUserInfo = async (userId: string, tableName: string) => {
     const params = {
-      TableName: tableName,
-      Key: {
-        PK: `USER#${userId}`,
-        SK: 'CRED#GOOGLE',
-      },
+        TableName: tableName,
+        Key: {
+            PK: `USER#${userId}`,
+            SK: 'CRED#GOOGLE',
+        },
     };
-  
+
     const result = await dynamoDb.get(params).promise();
     const credentials = result.Item;
-  
-    if (!credentials || !credentials.SheetId) {
-      throw new Error('Missing Google credentials for the specified userId');
+
+    console.log('Google credentials:', credentials);
+
+    if (!credentials || !credentials.SheetId || credentials.SheetIndex == null) {
+        throw new Error('Missing Google Info for the specified userId');
     }
-  
-    return credentials.SheetId;
-  };
-  
+
+    return {
+        sheetId: credentials.SheetId,
+        sheetIndex: credentials.SheetIndex
+    };
+};
+
+// Function to format date to MM/DD/YYYY HH:mm:ss
+function formatDateToSheetDate(isoDateString: string): string {
+    const date = new Date(isoDateString);
+    const formattedDate = `${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getDate().toString().padStart(2, '0')}/${date.getFullYear()} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}:${date.getSeconds().toString().padStart(2, '0')}`;
+    console.log('Formatted date:', formattedDate);
+    return formattedDate;
+}
 
 export const handler = async (event: {
     userId: string;
-    body: string;
+    tanitaData: string;
 }, _context: Context): Promise<APIGatewayProxyResult> => {
+    console.log('Received event:', event);
     try {
         if (!bucketName || !credentialsFilePath || !usersTable) {
             throw new Error('Missing required environment variables');
@@ -44,12 +57,14 @@ export const handler = async (event: {
         if (!s3Object.Body) {
             throw new Error('Failed to load credentials file from S3');
         }
-        const credentials = JSON.parse(s3Object.Body.toString('utf-8'));
-        const { client_email, private_key } = credentials;
-        console.log('Credentials:', client_email, private_key);
-        
-        const sheetId = await getGoogleSheetId(event.userId, usersTable);
+        const { client_email, private_key } = JSON.parse(s3Object.Body.toString('utf-8'));
+
+        const {
+            sheetId,
+            sheetIndex
+        } = await getGoogleSheetUserInfo(event.userId, usersTable);
         console.log('Sheet ID:', sheetId);
+        console.log('Sheet Index:', sheetIndex);
 
         // Initialize JWT auth
         const serviceAccountAuth = new JWT({
@@ -63,15 +78,18 @@ export const handler = async (event: {
 
         // Load document info and worksheet
         await doc.loadInfo();
-
-        // Access the first sheet by index (or by name if preferred)
-        const sheet = doc.sheetsByIndex[0];
+        const sheet = doc.sheetsByIndex[sheetIndex];
 
         // Parse the data from the event (assuming the Tanita JSON is in the event body)
-        const data = JSON.parse(event.body || '{}');
+        const dataArray = JSON.parse(event.tanitaData || '[]');
 
-        // Add a new row to the Google Sheets with the Tanita data
-        await sheet.addRow(data);
+        // Add new rows to the Google Sheets with the Tanita data
+        for (const data of dataArray) {
+            // Format the date to MM/DD/YYYY HH:mm:ss
+            data.date = formatDateToSheetDate(data.date);
+            console.log('Adding row:', data);
+            await sheet.addRow(data);
+        }
 
         return {
             statusCode: 200,

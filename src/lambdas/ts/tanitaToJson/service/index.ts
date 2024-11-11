@@ -29,7 +29,7 @@ export class TanitaService {
       'body_fat',
       'visc_fat',
       'muscle_mass',
-      'musscle_quality',
+      'muscle_quality',
       'bone_mass',
       'bmr',
       'metab_age',

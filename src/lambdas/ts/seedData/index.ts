@@ -37,6 +37,7 @@ export const handler = async () => {
             PK: `USER#${userId}`,
             SK: 'CRED#GOOGLE',
             SheetId: 'sheetId',
+            SheetIndex: '0',
             SyncEnabled: true  // SyncEnabled explicitly set for GOOGLE
         }
     ];

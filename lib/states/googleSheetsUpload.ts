@@ -46,6 +46,7 @@ export class GoogleSheetsUploadState extends Construct {
         this.invocation = new tasks.LambdaInvoke(this, `${id}GoogleSheetsUploadInvocation`, {
             lambdaFunction: this.lambda,
             payload: sfn.TaskInput.fromObject({
+                "userId.$": "$.userId",
                 "tanitaData.$": "$.measurements.data"
             }),
             resultPath: '$.googleUploadResult',
