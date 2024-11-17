@@ -12,13 +12,14 @@ interface ITanitaToJsonStateProps {
 }
 
 export class TanitaToJsonState extends Construct {
-  public readonly lambda: lambda.Function;
+  public readonly tanitaToJsonLambda: lambda.Function;
   public readonly invocation: tasks.LambdaInvoke;
 
   constructor(scope: Construct, id: string, props: ITanitaToJsonStateProps) {
     super(scope, id);
 
-    this.lambda = new NodejsFunction(
+    // Lambda for the main TanitaToJson logic
+    this.tanitaToJsonLambda = new NodejsFunction(
       scope,
       `${id}TanitaToJsonNodejsFunction`,
       {
@@ -28,22 +29,24 @@ export class TanitaToJsonState extends Construct {
         environment: {
           USERS_TABLE: props.usersTable.tableName,
         },
-        timeout: cdk.Duration.seconds(300),
+        timeout: cdk.Duration.seconds(300), // Ensure the Lambda has sufficient time to process
       }
     );
-    props.usersTable.grantReadData(this.lambda);
+    props.usersTable.grantReadData(this.tanitaToJsonLambda);
+
 
     this.invocation = new tasks.LambdaInvoke(this, `${id}TanitaToJsonInvocation`, {
-      lambdaFunction: this.lambda,
+      lambdaFunction: this.tanitaToJsonLambda,
       payload: sfn.TaskInput.fromObject({
-        userId: sfn.JsonPath.stringAt('$.userId'),
-        start_date: sfn.JsonPath.stringAt('$.start_date'),
-        end_date: sfn.JsonPath.stringAt('$.end_date'),
+        userId: sfn.JsonPath.stringAt('$.userId'), // Pass userId as input
+        start_date: sfn.JsonPath.stringAt('$.start_date'), // Pass start date
+        end_date: sfn.JsonPath.stringAt('$.end_date'), // Pass end date
       }),
       resultSelector: {
-        data: sfn.JsonPath.stringAt('$.Payload.body'),
+        data: sfn.JsonPath.stringAt('$.Payload.body'), // Extract data from Lambda result
       },
-      resultPath: '$.measurements',
+      resultPath: '$.measurements', // Store result in $.measurements
     });
+
   }
 }

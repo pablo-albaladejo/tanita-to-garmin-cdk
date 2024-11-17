@@ -87,7 +87,6 @@ export class TanitaToGarminCdkStack extends cdk.Stack {
     // Create the state machine
     const stateMachine = new sfn.StateMachine(this, 'TanitaToGarminStateMachine', {
       definition: chain,
-      timeout: cdk.Duration.minutes(5),
     });
 
     // Trigger state to start the state machine
