@@ -55,7 +55,6 @@ export async function handler(
       throw new Error('Missing Tanita credentials for the specified userId');
     }
     const { User: email, Pass: password, Profile: tanita_user } = credentials;
-    console.log('Tanita credentials:', { email, password, tanita_user });
 
     const { timestamp, timestampUpTo } = getTimestamps(start_date, end_date);
     console.log('Timestamps:', { timestamp, timestampUpTo });

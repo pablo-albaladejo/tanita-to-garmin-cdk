@@ -28,6 +28,8 @@ export class TanitaToGarminCdkStack extends cdk.Stack {
         PK: tasks.DynamoAttributeValue.fromString(sfn.JsonPath.format('USER#{}', sfn.JsonPath.stringAt('$.userId'))),
         SK: tasks.DynamoAttributeValue.fromString('CRED#GARMIN')
       },
+      // Fetch only the flag so credentials/tokens never reach the execution history
+      projectionExpression: [new tasks.DynamoProjectionExpression().withAttribute('SyncEnabled')],
       resultPath: '$.garminSyncStatus',
     });
 
@@ -38,6 +40,7 @@ export class TanitaToGarminCdkStack extends cdk.Stack {
         PK: tasks.DynamoAttributeValue.fromString(sfn.JsonPath.format('USER#{}', sfn.JsonPath.stringAt('$.userId'))),
         SK: tasks.DynamoAttributeValue.fromString('CRED#GOOGLE')
       },
+      projectionExpression: [new tasks.DynamoProjectionExpression().withAttribute('SyncEnabled')],
       resultPath: '$.googleSyncStatus',
     });
 
