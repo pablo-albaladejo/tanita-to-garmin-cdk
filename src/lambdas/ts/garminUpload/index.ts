@@ -10,7 +10,9 @@ import * as fs from 'fs';
 const dynamoDb = new AWS.DynamoDB.DocumentClient();
 const usersTable = process.env.USERS_TABLE;
 
-const getGarminCredentials = async (userId: string, tableName: string) => {
+// Garmin rate-limits password logins from cloud IPs (429), so this lambda only
+// authenticates with OAuth tokens seeded by scripts/garminTokenLogin.ts.
+const getGarminTokens = async (userId: string, tableName: string) => {
   const params = {
     TableName: tableName,
     Key: {
@@ -20,16 +22,39 @@ const getGarminCredentials = async (userId: string, tableName: string) => {
   };
 
   const result = await dynamoDb.get(params).promise();
-  const credentials = result.Item;
+  const item = result.Item;
 
-  if (!credentials || !credentials.User || !credentials.Pass) {
-    throw new Error('Missing Garmin credentials for the specified userId');
+  if (!item || !item.OAuth1Token || !item.OAuth2Token) {
+    throw new Error(
+      'Missing Garmin OAuth tokens for the specified userId. ' +
+        'Seed them with "npm run garmin:token -- <userId>" from a residential IP'
+    );
   }
 
   return {
-    username: credentials.User,
-    password: credentials.Pass,
+    oauth1: JSON.parse(item.OAuth1Token),
+    oauth2: JSON.parse(item.OAuth2Token),
   };
+};
+
+const saveGarminTokens = async (
+  userId: string,
+  tableName: string,
+  oauth1: object,
+  oauth2: object
+) => {
+  await dynamoDb.update({
+    TableName: tableName,
+    Key: {
+      PK: `USER#${userId}`,
+      SK: 'CRED#GARMIN',
+    },
+    UpdateExpression: 'SET OAuth1Token = :oauth1, OAuth2Token = :oauth2',
+    ExpressionAttributeValues: {
+      ':oauth1': JSON.stringify(oauth1),
+      ':oauth2': JSON.stringify(oauth2),
+    },
+  }).promise();
 };
 
 export async function handler(
@@ -43,37 +68,28 @@ export async function handler(
     throw new Error('Environment variable USERS_TABLE is not defined');
   }
 
-  const { username, password } = await getGarminCredentials(event.userId, usersTable);
+  const { oauth1, oauth2 } = await getGarminTokens(event.userId, usersTable);
 
-  const GCClient = new GarminConnect({
-    username,
-    password,
-  });
-  await GCClient.login();
+  const GCClient = new GarminConnect({ username: '', password: '' });
+  GCClient.loadToken(oauth1, oauth2);
 
   // Decode base64 file and save it temporarily
   const filePath = path.join('/tmp', `activity-${event.userId}.fit`);
   const fileBuffer = Buffer.from(event.base64, 'base64');
   fs.writeFileSync(filePath, fileBuffer);
 
-  // Upload the file to Garmin Connect
   try {
     const upload = await GCClient.uploadActivity(filePath, 'fit');
-    
+
+    // The client refreshes the OAuth2 token when it expires; persist it for the next run
+    const tokens = GCClient.exportToken();
+    await saveGarminTokens(event.userId, usersTable, tokens.oauth1, tokens.oauth2);
+
     return {
       statusCode: 200,
       body: JSON.stringify({
         message: 'File uploaded successfully',
         upload,
-      }),
-    };
-  } catch (error) {
-    console.error('Error uploading to Garmin:', error);
-    return {
-      statusCode: 500,
-      body: JSON.stringify({
-        message: 'Failed to upload file to Garmin',
-        error: error instanceof Error ? error.message : 'Unknown error',
       }),
     };
   } finally {
