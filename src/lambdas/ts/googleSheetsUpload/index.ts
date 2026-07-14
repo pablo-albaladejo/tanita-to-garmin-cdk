@@ -23,8 +23,6 @@ const getGoogleSheetUserInfo = async (userId: string, tableName: string) => {
     const result = await dynamoDb.get(params).promise();
     const credentials = result.Item;
 
-    console.log('Google credentials:', credentials);
-
     if (!credentials || !credentials.SheetId || credentials.SheetIndex == null) {
         throw new Error('Missing Google Info for the specified userId');
     }
