@@ -1,5 +1,6 @@
 #!/bin/bash
-set -euo pipefail
+# cdk.json runs this with `sh` (dash on Ubuntu): keep it POSIX-compatible
+set -eu
 
 # Root directory where the subdirectories are located
 root_directory="src/lambdas/java"
