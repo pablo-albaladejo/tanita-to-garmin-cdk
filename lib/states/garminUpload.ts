@@ -24,7 +24,7 @@ export class GarminUploadState extends Construct {
       {
         handler: 'handler',
         entry: 'src/lambdas/ts/garminUpload/index.ts',
-        runtime: lambda.Runtime.NODEJS_20_X,
+        runtime: lambda.Runtime.NODEJS_24_X,
         environment: {
           USERS_TABLE: props.usersTable.tableName,
         },

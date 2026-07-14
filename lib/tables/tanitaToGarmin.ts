@@ -33,7 +33,7 @@ export class TanitaToGarminTable extends Construct {
             {
                 handler: 'handler',
                 entry: 'src/lambdas/ts/seedData/index.ts',
-                runtime: lambda.Runtime.NODEJS_20_X,
+                runtime: lambda.Runtime.NODEJS_24_X,
                 environment: {
                     USERS_TABLE: this.usersTable.tableName,
                 },

@@ -10,6 +10,6 @@ Container directory for lambda handlers, split by runtime language.
 | Directory | Purpose |
 |-----------|---------|
 | `ts/` | TypeScript lambdas, bundled with esbuild via `NodejsFunction` (see `ts/AGENTS.md`) |
-| `java/` | Java 11 lambda for FIT file encoding (see `java/AGENTS.md`) |
+| `java/` | Java 25 lambda for FIT file encoding (see `java/AGENTS.md`) |
 
 <!-- MANUAL: -->

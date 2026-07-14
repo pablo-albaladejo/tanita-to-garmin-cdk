@@ -4,14 +4,14 @@
 # fitToolkit
 
 ## Purpose
-Java 11 Maven project that converts the normalized measurements JSON into a
+Java 25 Maven project that converts the normalized measurements JSON into a
 binary Garmin `.fit` weight file, returned as base64. Deployed as the
 `JsonToFit` lambda.
 
 ## Key Files
 | File | Description |
 |------|-------------|
-| `pom.xml` | Maven build (Java 11); depends on the local `fit.jar` artifact |
+| `pom.xml` | Maven build (Java 25); depends on the local `fit.jar` artifact |
 | `libs/fit.jar` | Vendored Garmin FIT SDK; installed as local Maven artifact by `cdk_hooks.sh` |
 | `src/main/java/fit/toolkit/handler/WeightHandler.java` | Lambda entry point: JSON array → `WeightScaleMesg` records → base64 `.fit` |
 | `src/main/java/fit/toolkit/handler/WeightScaleMesgBMI.java` | `WeightScaleMesg` subclass adding a BMI field (field 13) the stock SDK doesn't expose |

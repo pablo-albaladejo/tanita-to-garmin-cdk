@@ -13,7 +13,7 @@ stack to chain.
 |------|-------------|
 | `trigger.ts` | Nightly EventBridge cron (00:00 UTC) → trigger lambda; grants `StartExecution` on the state machine |
 | `tanitaToJson.ts` | Fetch/normalize lambda; result stored at `$.measurements` (payload: userId, start_date, end_date) |
-| `jsonToFit.ts` | Java 11 lambda from the Maven-built jar asset; JSON → base64 `.fit` at `$.file` |
+| `jsonToFit.ts` | Java 25 lambda from the Maven-built jar asset; JSON → base64 `.fit` at `$.file` |
 | `garminUpload.ts` | Upload lambda; `grantReadWriteData` so it can persist refreshed OAuth tokens |
 | `googleSheetsUpload.ts` | Upload lambda + S3 credentials bucket (`RemovalPolicy.RETAIN`); reads `credentials/tanita.json` |
 
@@ -33,7 +33,7 @@ stack to chain.
 
 ### Common Patterns
 - `NodejsFunction` with `entry` into `src/lambdas/ts/<name>/index.ts`,
-  `runtime: NODEJS_20_X`, 300 s timeout, `USERS_TABLE` env var.
+  `runtime: NODEJS_24_X`, 300 s timeout, `USERS_TABLE` env var.
 - `LambdaInvoke` payloads pull from the execution state with
   `sfn.JsonPath.stringAt(...)`; `resultSelector`/`resultPath` shape the state.
 

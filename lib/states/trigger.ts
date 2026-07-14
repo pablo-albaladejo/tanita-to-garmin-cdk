@@ -18,7 +18,7 @@ export class TriggerState extends Construct {
         super(scope, id);
     
         this.lambda = new NodejsFunction(this, `${id}Lambda`, {
-            runtime: lambda.Runtime.NODEJS_20_X,
+            runtime: lambda.Runtime.NODEJS_24_X,
             handler: 'handler',
             entry: 'src/lambdas/ts/trigger/index.ts',
             environment: {

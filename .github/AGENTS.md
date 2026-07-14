@@ -14,7 +14,7 @@ CI/CD configuration (GitHub Actions).
 ## For AI Agents
 
 ### Working In This Directory
-- The deploy job needs Java 11 (Temurin) because `cdk_hooks.sh` runs Maven
+- The deploy job needs Java 25 (Temurin) because `cdk_hooks.sh` runs Maven
   during synth; the test job doesn't (tests use a placeholder jar).
 - AWS auth comes from repo secrets `AWS_ACCESS_KEY_ID` /
   `AWS_SECRET_ACCESS_KEY` and repo variable `AWS_REGION` (eu-west-1).

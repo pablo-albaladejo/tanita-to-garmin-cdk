@@ -16,7 +16,7 @@ export class JsonToFitState extends Construct {
     super(scope, id);
   
     const fitToolkitFunction = new lambda.Function(scope, `${id}FitToolkitFunction`, {
-      runtime: lambda.Runtime.JAVA_11,
+      runtime: lambda.Runtime.JAVA_25,
       handler: 'fit.toolkit.handler.WeightHandler::handleRequest',
       code: lambda.Code.fromAsset(
         'src/lambdas/java/fitToolkit/target/fit-toolkit-latest.jar'
