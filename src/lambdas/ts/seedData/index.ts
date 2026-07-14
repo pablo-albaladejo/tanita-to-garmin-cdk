@@ -4,12 +4,18 @@ import { v4 as uuidv4 } from 'uuid';
 const dynamoDb = new DynamoDB.DocumentClient();
 const tableName = process.env.USERS_TABLE;
 
-export const handler = async () => {
+export const handler = async (event: { RequestType?: string } = {}) => {
+    // Only seed on stack creation; Update/Delete events must not re-insert example users
+    if (event.RequestType !== 'Create') {
+        console.log(`Skipping seed data for event type: ${event.RequestType}`);
+        return;
+    }
+
     if (!tableName) {
         console.error('Table name not set');
         return;
     }
-    
+
     const userId = uuidv4();
 
     const exampleData = [
