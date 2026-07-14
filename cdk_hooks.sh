@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 
 # Root directory where the subdirectories are located
 root_directory="src/lambdas/java"
