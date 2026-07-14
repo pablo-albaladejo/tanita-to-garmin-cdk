@@ -31,7 +31,8 @@ export class GarminUploadState extends Construct {
         timeout: cdk.Duration.seconds(300),
       }
     );
-    props.usersTable.grantReadData(this.lambda);
+    // Read tokens and persist them back after the library refreshes them
+    props.usersTable.grantReadWriteData(this.lambda);
 
     this.invocation = new tasks.LambdaInvoke(this, `${id}GarminUploadInvocation`, {
       lambdaFunction: this.lambda,
