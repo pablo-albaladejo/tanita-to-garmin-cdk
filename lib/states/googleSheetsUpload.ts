@@ -32,7 +32,7 @@ export class GoogleSheetsUploadState extends Construct {
             {
                 handler: 'handler',
                 entry: 'src/lambdas/ts/googleSheetsUpload/index.ts',
-                runtime: lambda.Runtime.NODEJS_20_X,
+                runtime: lambda.Runtime.NODEJS_24_X,
                 timeout: cdk.Duration.seconds(300),
                 environment: {
                     USERS_TABLE: props.usersTable.tableName,

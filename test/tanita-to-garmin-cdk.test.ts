@@ -30,7 +30,7 @@ describe('TanitaToGarminCdkStack', () => {
 
   test('creates the FIT toolkit Java lambda', () => {
     template.hasResourceProperties('AWS::Lambda::Function', {
-      Runtime: 'java11',
+      Runtime: 'java25',
       Handler: 'fit.toolkit.handler.WeightHandler::handleRequest',
     });
   });

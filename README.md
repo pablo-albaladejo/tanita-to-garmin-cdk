@@ -29,7 +29,7 @@ flowchart TD
    normalizes them to JSON (weight, BMI, body fat, muscle mass, …).
 3. Two parallel branches check the per-service `SyncEnabled` flag and, when
    enabled:
-   - **Garmin**: a Java 11 lambda converts the JSON to a binary `.fit` file
+   - **Garmin**: a Java 25 lambda converts the JSON to a binary `.fit` file
      using the Garmin FIT SDK, and **GarminUpload** uploads it to Garmin
      Connect using stored OAuth tokens.
    - **Google Sheets**: **GoogleSheetsUpload** appends one row per measurement

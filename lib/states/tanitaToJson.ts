@@ -25,7 +25,7 @@ export class TanitaToJsonState extends Construct {
       {
         handler: 'handler',
         entry: 'src/lambdas/ts/tanitaToJson/index.ts',
-        runtime: lambda.Runtime.NODEJS_20_X,
+        runtime: lambda.Runtime.NODEJS_24_X,
         environment: {
           USERS_TABLE: props.usersTable.tableName,
         },
