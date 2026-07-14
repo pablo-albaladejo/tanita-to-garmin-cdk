@@ -49,6 +49,25 @@ export class TanitaToGarminCdkStack extends cdk.Stack {
     const garminUploadState = new GarminUploadState(this, 'GarminUploadState', {
       usersTable: tanitaToGarminTable.usersTable
     });
+
+    // Catch failures inside each branch so one service failing doesn't abort
+    // the other; the failure is recorded and re-raised after the Parallel
+    const garminSyncFailed = new sfn.Pass(this, 'Garmin Sync Failed', {
+      parameters: {
+        failedBranch: 'garmin',
+        'error.$': '$.error',
+      },
+    });
+    const googleSyncFailed = new sfn.Pass(this, 'Google Sync Failed', {
+      parameters: {
+        failedBranch: 'google',
+        'error.$': '$.error',
+      },
+    });
+    checkGarminSync.addCatch(garminSyncFailed, { resultPath: '$.error' });
+    jsonToFitState.invocation.addCatch(garminSyncFailed, { resultPath: '$.error' });
+    garminUploadState.invocation.addCatch(garminSyncFailed, { resultPath: '$.error' });
+
     // Path for Garmin sync based on SyncEnabled status
     const garminSyncPath = checkGarminSync.next(
       new sfn.Choice(this, 'Is Garmin Sync Enabled?')
@@ -67,6 +86,9 @@ export class TanitaToGarminCdkStack extends cdk.Stack {
     const googleSheetsUploadState =  new GoogleSheetsUploadState(this, 'GoogleSheetsUploadState', {
       usersTable: tanitaToGarminTable.usersTable
     });
+    checkGoogleSync.addCatch(googleSyncFailed, { resultPath: '$.error' });
+    googleSheetsUploadState.invocation.addCatch(googleSyncFailed, { resultPath: '$.error' });
+
     const googleSyncPath = checkGoogleSync.next(
       new sfn.Choice(this, 'Is Google Sheets Sync Enabled?')
         .when(
@@ -84,8 +106,25 @@ export class TanitaToGarminCdkStack extends cdk.Stack {
       .branch(garminSyncPath)
       .branch(googleSyncPath);
 
+    // Fail the execution if any branch recorded a failure, so problems stay
+    // visible even though the branches don't abort each other
+    const anySyncFailed = new sfn.Choice(this, 'Any Sync Failed?')
+      .when(
+        sfn.Condition.or(
+          sfn.Condition.isPresent('$[0].failedBranch'),
+          sfn.Condition.isPresent('$[1].failedBranch')
+        ),
+        new sfn.Fail(this, 'Sync Failed', {
+          error: 'SyncBranchFailed',
+          cause: 'One or more sync branches failed; check the branch outputs in the execution history',
+        })
+      )
+      .otherwise(new sfn.Succeed(this, 'All Syncs Done'));
+
     // Define the main chain of states
-    const chain: sfn.Chain = tanitaToJsonState.invocation.next(parallelSyncs);
+    const chain: sfn.Chain = tanitaToJsonState.invocation
+      .next(parallelSyncs)
+      .next(anySyncFailed);
 
     // Create the state machine
     const stateMachine = new sfn.StateMachine(this, 'TanitaToGarminStateMachine', {
