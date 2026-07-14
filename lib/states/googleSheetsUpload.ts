@@ -20,7 +20,8 @@ export class GoogleSheetsUploadState extends Construct {
         super(scope, id);
 
         const credentialsBucket = new s3.Bucket(this, `${id}GoogleCredentialsBucket`, {
-            removalPolicy: cdk.RemovalPolicy.DESTROY,
+            // The bucket holds the Google service-account key
+            removalPolicy: cdk.RemovalPolicy.RETAIN,
             blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
             encryption: s3.BucketEncryption.S3_MANAGED,
         });
