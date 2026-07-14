@@ -17,7 +17,8 @@ export class TanitaToGarminTable extends Construct {
             partitionKey: { name: 'PK', type: dynamodb.AttributeType.STRING },
             sortKey: { name: 'SK', type: dynamodb.AttributeType.STRING },
             billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
-            removalPolicy: cdk.RemovalPolicy.DESTROY,
+            // The table holds real user data and credentials
+            removalPolicy: cdk.RemovalPolicy.RETAIN,
         });
         this.usersTable.addGlobalSecondaryIndex({
             indexName: "UsernameIndex",
