@@ -97,9 +97,8 @@ export const handler = async (event: {
         };
     } catch (error) {
         console.error('Error uploading to Google Sheets:', error);
-        return {
-            statusCode: 500,
-            body: JSON.stringify({ message: 'Failed to upload data', error: (error as Error).message }),
-        };
+        // Rethrow so the state machine marks the branch as failed instead of
+        // reporting success on a swallowed error
+        throw error;
     }
 };
