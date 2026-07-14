@@ -12,3 +12,6 @@ cdk.out
 
 # vscode
 .vscode
+
+# oh-my-claudecode
+.omc
